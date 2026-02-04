@@ -95,7 +95,29 @@
         </main>
     </div>
     <div class="modal-overlay" id="loginModal"><div class="modal"><h2>Admin Login</h2><p class="error-msg" id="loginError"></p><input type="email" id="email" placeholder="Email"><input type="password" id="password" placeholder="Password"><button class="login-btn" onclick="login()">Login</button><button class="cancel-btn" onclick="hideLogin()">Cancel</button></div></div>
-    <div class="admin-panel" id="adminPanel"><div class="admin-header"><h2>Admin Panel</h2><div style="display: flex; align-items: center;"><span id="userInfo" class="user-info"></span><button class="close-btn" onclick="logout()">&times;</button></div></div><div class="admin-top-bar"><button class="admin-top-btn" onclick="showChangePassword()">Change Password</button></div><nav class="admin-category-bar"><button class="admin-category-btn active" data-category="food">Food</button><button class="admin-category-btn" data-category="drink">Drink</button><button class="admin-category-btn" data-category="promo">Promo</button></nav><div class="admin-content"><div class="admin-category-content active" id="admin-food"></div><div class="admin-category-content" id="admin-drink"></div><div class="admin-category-content" id="admin-promo"></div><button class="btn-save" onclick="saveAllChanges()">Save All Changes</button></div></div>
+    <div class="admin-panel" id="adminPanel">
+        <div class="admin-header">
+            <h2>Admin Panel</h2>
+            <div style="display: flex; align-items: center;">
+                <span id="userInfo" class="user-info"></span>
+                <button class="close-btn" onclick="closeAdminPanel()">&times;</button>
+            </div>
+        </div>
+        <div class="admin-top-bar">
+            <button class="admin-top-btn" onclick="showChangePassword()">Change Password</button>
+        </div>
+        <nav class="admin-category-bar">
+            <button class="admin-category-btn active" data-category="food" onclick="switchAdminTab('food')">Food</button>
+            <button class="admin-category-btn" data-category="drink" onclick="switchAdminTab('drink')">Drink</button>
+            <button class="admin-category-btn" data-category="promo" onclick="switchAdminTab('promo')">Promo</button>
+        </nav>
+        <div class="admin-content">
+            <div class="admin-category-content active" id="admin-food"></div>
+            <div class="admin-category-content" id="admin-drink"></div>
+            <div class="admin-category-content" id="admin-promo"></div>
+            <button class="btn-save" onclick="saveAllChanges()">Save All Changes</button>
+        </div>
+    </div>
     <div class="modal-overlay" id="passwordModal"><div class="modal"><h2>Change Password</h2><p class="error-msg" id="passwordError"></p><p class="success-msg" id="passwordSuccess"></p><input type="password" id="currentPassword" placeholder="Current Password"><input type="password" id="newPassword" placeholder="New Password"><button class="login-btn" onclick="changePassword()">Change Password</button><button class="cancel-btn" onclick="hideChangePassword()">Cancel</button></div></div>
     <div class="offline-badge" id="offlineBadge">You are offline - Changes will sync when online</div>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -118,28 +140,270 @@
         const carouselState = { food: { current: 0 }, drink: { current: 0 }, promo: { current: 0 } };
         function showLogin() { document.getElementById('loginModal').classList.add('active'); document.getElementById('loginError').style.display = 'none'; }
         function hideLogin() { document.getElementById('loginModal').classList.remove('active'); }
+        function closeAdminPanel() {
+            document.getElementById('adminPanel').classList.remove('active');
+        }
+        
+        function switchAdminTab(category) {
+            document.querySelectorAll('.admin-category-btn').forEach(x => x.classList.remove('active'));
+            document.querySelectorAll('.admin-category-content').forEach(x => x.classList.remove('active'));
+            document.querySelector(`[data-category="${category}"]`).classList.add('active');
+            document.getElementById('admin-' + category).classList.add('active');
+        }
+        
+        async function logout() { 
+            await auth.signOut(); 
+            closeAdminPanel(); 
+        }
+        
         function showChangePassword() { document.getElementById('passwordModal').classList.add('active'); document.getElementById('passwordError').style.display = 'none'; document.getElementById('passwordSuccess').style.display = 'none'; }
         function hideChangePassword() { document.getElementById('passwordModal').classList.remove('active'); }
-        async function login() { const e = document.getElementById('email').value, p = document.getElementById('password').value; try { await auth.signInWithEmailAndPassword(e, p); hideLogin(); } catch(err) { document.getElementById('loginError').textContent = err.message; document.getElementById('loginError').style.display = 'block'; } }
+        async function login() { 
+            const e = document.getElementById('email').value, p = document.getElementById('password').value; 
+            try { 
+                console.log('Attempting login...');
+                await auth.signInWithEmailAndPassword(e, p); 
+                console.log('Login successful');
+                hideLogin(); 
+            } catch(err) { 
+                console.error('Login failed:', err);
+                document.getElementById('loginError').textContent = err.message; 
+                document.getElementById('loginError').style.display = 'block'; 
+            } 
+        }
         async function logout() { await auth.signOut(); document.getElementById('adminPanel').classList.remove('active'); }
-        async function changePassword() { const cp = document.getElementById('currentPassword').value, np = document.getElementById('newPassword').value; try { await auth.signInWithEmailAndPassword(currentUser.email, cp); await currentUser.updatePassword(np); document.getElementById('passwordSuccess').textContent = 'Password changed!'; document.getElementById('passwordSuccess').style.display = 'block'; setTimeout(hideChangePassword, 2000); } catch(err) { document.getElementById('passwordError').textContent = err.message; document.getElementById('passwordError').style.display = 'block'; } }
+        async function changePassword() { 
+            const cp = document.getElementById('currentPassword').value, np = document.getElementById('newPassword').value; 
+            if(!cp || !np) {
+                document.getElementById('passwordError').textContent = 'Please fill in all fields';
+                document.getElementById('passwordError').style.display = 'block';
+                return;
+            }
+            if(np.length < 6) {
+                document.getElementById('passwordError').textContent = 'Password must be at least 6 characters';
+                document.getElementById('passwordError').style.display = 'block';
+                return;
+            }
+            try { 
+                await auth.signInWithEmailAndPassword(currentUser.email, cp); 
+                await currentUser.updatePassword(np); 
+                document.getElementById('passwordSuccess').textContent = 'Password changed successfully!'; 
+                document.getElementById('passwordSuccess').style.display = 'block'; 
+                setTimeout(() => { 
+                    hideChangePassword(); 
+                }, 2000); 
+            } catch(err) { 
+                document.getElementById('passwordError').textContent = err.message; 
+                document.getElementById('passwordError').style.display = 'block'; 
+            } 
+        }
         function loadLocal() { try { localData = JSON.parse(localStorage.getItem('menuData')); } catch(e) {} }
         function saveLocal() { if(menuData) localStorage.setItem('menuData', JSON.stringify(menuData)); }
-        auth.onAuthStateChanged(async u => { currentUser = u; loadLocal(); if(u){ document.getElementById('userInfo').textContent = u.email; showAdminPanel(); } await loadMenuData(); });
-        async function loadMenuData() { try { const d = await db.collection('settings').doc('menuData').get(); if(d.exists){ menuData = d.data(); saveLocal(); } else if(localData){ menuData = localData; await db.collection('settings').doc('menuData').set(menuData); } else { menuData = JSON.parse(JSON.stringify(defaultData)); await db.collection('settings').doc('menuData').set(menuData); saveLocal(); } } catch(e) { menuData = localData || JSON.parse(JSON.stringify(defaultData)); } renderMenu(); document.getElementById('loadingSpinner').classList.remove('active'); document.getElementById('mainContent').style.display = 'block'; }
+        auth.onAuthStateChanged(async u => { 
+            currentUser = u; 
+            loadLocal();
+            if(u){ 
+                document.getElementById('userInfo').textContent = u.email; 
+            }
+            await loadMenuData();
+            if(currentUser) {
+                showAdminPanel();
+            }
+        });
+        async function loadMenuData() { 
+            try { 
+                const d = await db.collection('settings').doc('menuData').get(); 
+                if(d.exists && d.data()) { 
+                    menuData = d.data(); 
+                    saveLocal(); 
+                    console.log('Loaded from Firebase');
+                } else if(localData) { 
+                    menuData = localData; 
+                    await db.collection('settings').doc('menuData').set(menuData); 
+                    console.log('Loaded from local storage');
+                } else { 
+                    menuData = JSON.parse(JSON.stringify(defaultData)); 
+                    await db.collection('settings').doc('menuData').set(menuData); 
+                    saveLocal(); 
+                    console.log('Using default data');
+                } 
+            } catch(e) { 
+                console.log('Error loading, using local:', e.message);
+                menuData = localData || JSON.parse(JSON.stringify(defaultData)); 
+            } 
+            renderMenu(); 
+            document.getElementById('loadingSpinner').classList.remove('active'); 
+            document.getElementById('mainContent').style.display = 'block'; 
+            if(currentUser) {
+                showAdminPanel();
+            }
+        }
         async function saveMenuData() { try { await db.collection('settings').doc('menuData').set(menuData); saveLocal(); alert('Saved!'); renderMenu(); } catch(e) { saveLocal(); alert('Saved locally - will sync when online'); } }
         function renderMenu() { ['food','drink','promo'].forEach(c => { const t = document.querySelector(`#${c}-carousel .carousel-track`); t.innerHTML = menuData[c].map(s => `<div class="carousel-slide"><img src="${s.image||'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200"><rect fill="#ddd" width="800" height="1200"/><text fill="#999" x="50%" y="50%" text-anchor="middle">No Image</text></svg>')}"></div>`).join(''); updateCarousel(c); }); }
         function updateCarousel(c) { const d = document.querySelector(`#${c}-carousel .carousel-dots`), i = carouselState[c].current, s = menuData[c]; document.querySelector(`#${c}-carousel .carousel-track`).style.transform = `translateX(${-i*100}%)`; if(d && s.length>1){ d.innerHTML = s.map((_,j) => `<span class="dot ${j===i?'active':''}" onclick="goToSlide('${c}',${j})"></span>`).join(''); d.style.display='flex'; } else if(d){ d.style.display='none'; } renderMenuItems(c); }
         function moveSlide(c,d) { carouselState[c].current = (carouselState[c].current + d + menuData[c].length) % menuData[c].length; updateCarousel(c); }
         function goToSlide(c,i) { carouselState[c].current = i; updateCarousel(c); }
         function renderMenuItems(c) { const con = document.getElementById(`${c}-items`), s = menuData[c][carouselState[c].current]; con.innerHTML = s.items.map(i => `<div class="menu-item"><div class="item-image"><img src="${i.image||'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="#ddd" width="100" height="100"/><text fill="#999" x="50%" y="50%" text-anchor="middle">No Image</text></svg>')}"></div><div class="item-info"><div>${i.tag?`<span class="promo-tag">${i.tag}</span>`:''}<div class="item-name">${i.name}</div><div class="item-desc">${i.desc}</div></div><div class="item-bottom"><span class="item-price">${i.price}</span></div></div></div>`).join(''); }
-        function showAdminPanel() { document.getElementById('adminPanel').classList.add('active'); generateAdminForms(); document.querySelectorAll('.admin-category-btn').forEach(b => b.onclick = function() { document.querySelectorAll('.admin-category-btn').forEach(x => x.classList.remove('active')); document.querySelectorAll('.admin-category-content').forEach(x => x.classList.remove('active')); this.classList.add('active'); document.getElementById('admin-' + this.dataset.category).classList.add('active'); }); }
-        function generateAdminForms() { ['food','drink','promo'].forEach(cat => { const slides = menuData[cat]; let html = `<button class="btn btn-add" onclick="addSlide('${cat}')">+ Add Slide</button><p style="font-size:0.85rem;color:#666;margin:10px 0;">Slides: ${slides.length}/10</p>`; slides.forEach((slide,i) => { html += `<div class="admin-section"><h3>Slide ${i+1}<div>${slides.length>1?`<button class="btn btn-delete" onclick="deleteSlide('${cat}',${i})">Delete</button>`:''}</div></h3><div class="edit-item"><label>Image URL</label><input type="url" id="${cat}_${i}_image" value="${slide.image}" placeholder="https://..."></div><div style="display:flex;justify-content:space-between;align-items:center;margin:15px 0;"><strong>Items (${slide.items.length})</strong><button class="btn btn-add" onclick="addMenuItem('${cat}',${i})">+ Add Item</button></div>`; slide.items.forEach((item,j) => { html += `<div class="edit-item"><div style="display:flex;justify-content:space-between;margin-bottom:10px;"><strong>Item ${j+1}</strong><div>${slide.items.length>1?`<button class="btn btn-delete" onclick="deleteMenuItem('${cat}',${i},${j})">Remove</button>`:''}</div></div><label>Image URL</label><input type="url" id="${cat}_${i}_item_${j}_image" value="${item.image}" placeholder="https://..."><label>Name</label><input type="text" id="${cat}_${i}_item_${j}_name" value="${item.name}"><label>Description</label><textarea id="${cat}_${i}_item_${j}_desc">${item.desc}</textarea><label>Price</label><input type="text" id="${cat}_${i}_item_${j}_price" value="${item.price}"><label>Tag</label><input type="text" id="${cat}_${i}_item_${j}_tag" value="${item.tag}"></div>`; }); html += '</div>'; }); document.getElementById(`${cat}-admin-content`).innerHTML = html; }); }
-        function addSlide(c) { if(menuData[c].length>=10){alert('Max 10');return;} menuData[c].push({image:'',items:[{name:'New Item',desc:'Description',price:'$0.00',tag:'',image:''}]}); generateAdminForms(); }
-        function deleteSlide(c,i) { if(menuData[c].length<=1){alert('Min 1');return;} if(confirm('Delete?')){menuData[c].splice(i,1);generateAdminForms();renderMenu();} }
-        function addMenuItem(c,s) { if(menuData[c][s].items.length>=10){alert('Max 10');return;} menuData[c][s].items.push({name:'New Item',desc:'Description',price:'$0.00',tag:'',image:''}); generateAdminForms(); }
-        function deleteMenuItem(c,s,i) { if(menuData[c][s].items.length<=1){alert('Min 1');return;} menuData[c][s].items.splice(i,1); generateAdminForms(); }
-        function saveAllChanges() { ['food','drink','promo'].forEach(cat => { menuData[cat].forEach((slide,i) => { const img = document.getElementById(`${cat}_${i}_image`); if(img) slide.image = img.value; slide.items.forEach((item,j) => { ['name','desc','price','tag','image'].forEach(f => { const el = document.getElementById(`${cat}_${i}_item_${j}_${f}`); if(el) item[f] = el.value; }); }); }); }); saveMenuData(); }
+        function showAdminPanel() { 
+            console.log('Opening admin panel, menuData:', menuData ? 'loaded' : 'null');
+            if(!menuData) {
+                console.log('Waiting for menu data...');
+                return;
+            }
+            document.getElementById('adminPanel').classList.add('active'); 
+            generateAdminForms();
+            setupAdminTabs();
+        }
+        
+        function setupAdminTabs() {
+            document.querySelectorAll('.admin-category-btn').forEach(btn => {
+                btn.onclick = function() {
+                    document.querySelectorAll('.admin-category-btn').forEach(x => x.classList.remove('active'));
+                    document.querySelectorAll('.admin-category-content').forEach(x => x.classList.remove('active'));
+                    this.classList.add('active');
+                    const cat = this.dataset.category;
+                    document.getElementById('admin-' + cat).classList.add('active');
+                };
+            });
+        }
+        
+        function generateAdminForms() { 
+            if(!menuData) {
+                console.error('Cannot generate forms: menuData is null');
+                return;
+            }
+            ['food','drink','promo'].forEach(cat => { 
+                const slides = menuData[cat]; 
+                if(!slides) return;
+                let html = `<button class="btn btn-add" id="addSlide-${cat}">+ Add Slide</button>`;
+                html += `<p style="font-size:0.85rem;color:#666;margin:10px 0;">Slides: ${slides.length}/10</p>`;
+                slides.forEach((slide,i) => { 
+                    html += `<div class="admin-section">
+                        <h3>Slide ${i+1}
+                        <div>${slides.length>1?`<button class="btn btn-delete" id="deleteSlide-${cat}-${i}">Delete</button>`:''}</div>
+                        </h3>
+                        <div class="edit-item">
+                            <label>Image URL</label>
+                            <input type="url" id="${cat}_${i}_image" value="${slide.image}" placeholder="https://...">
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin:15px 0;">
+                            <strong>Items (${slide.items.length})</strong>
+                            <button class="btn btn-add" id="addItem-${cat}-${i}">+ Add Item</button>
+                        </div>`; 
+                    slide.items.forEach((item,j) => { 
+                        html += `<div class="edit-item">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+                                <strong>Item ${j+1}</strong>
+                                <div>${slide.items.length>1?`<button class="btn btn-delete" id="deleteItem-${cat}-${i}-${j}">Remove</button>`:''}</div>
+                            </div>
+                            <label>Image URL</label>
+                            <input type="url" id="${cat}_${i}_item_${j}_image" value="${item.image}" placeholder="https://...">
+                            <label>Name</label>
+                            <input type="text" id="${cat}_${i}_item_${j}_name" value="${item.name}">
+                            <label>Description</label>
+                            <textarea id="${cat}_${i}_item_${j}_desc">${item.desc}</textarea>
+                            <label>Price</label>
+                            <input type="text" id="${cat}_${i}_item_${j}_price" value="${item.price}">
+                            <label>Tag</label>
+                            <input type="text" id="${cat}_${i}_item_${j}_tag" value="${item.tag}">
+                        </div>`; 
+                    }); 
+                    html += `</div>`; 
+                }); 
+                document.getElementById(`${cat}-admin-content`).innerHTML = html; 
+            });
+            attachAdminHandlers();
+        }
+        
+        function attachAdminHandlers() {
+            ['food','drink','promo'].forEach(cat => {
+                const addSlideBtn = document.getElementById(`addSlide-${cat}`);
+                if(addSlideBtn) addSlideBtn.onclick = () => addSlide(cat);
+                
+                slides = menuData[cat];
+                if(slides) {
+                    slides.forEach((_, i) => {
+                        const deleteBtn = document.getElementById(`deleteSlide-${cat}-${i}`);
+                        if(deleteBtn) deleteBtn.onclick = () => deleteSlide(cat, i);
+                        
+                        const addItemBtn = document.getElementById(`addItem-${cat}-${i}`);
+                        if(addItemBtn) addItemBtn.onclick = () => addMenuItem(cat, i);
+                        
+                        if(slides[i] && slides[i].items) {
+                            slides[i].items.forEach((_, j) => {
+                                const deleteItemBtn = document.getElementById(`deleteItem-${cat}-${i}-${j}`);
+                                if(deleteItemBtn) deleteItemBtn.onclick = () => deleteMenuItem(cat, i, j);
+                            });
+                        }
+                    });
+                }
+            });
+        }
+        function addSlide(cat) { 
+            console.log('Adding slide to', cat);
+            if(!menuData || !menuData[cat]) return;
+            if(menuData[cat].length>=10){alert('Maximum 10 slides allowed');return;} 
+            menuData[cat].push({
+                image: '',
+                items: [{name:'New Item',desc:'Description',price:'$0.00',tag:'',image:''}]
+            }); 
+            generateAdminForms(); 
+        }
+        
+        function deleteSlide(cat, index) { 
+            if(!menuData || !menuData[cat]) return;
+            if(menuData[cat].length<=1){alert('At least one slide required');return;} 
+            if(confirm('Delete slide ' + (index + 1) + '?')){
+                menuData[cat].splice(index, 1); 
+                generateAdminForms();
+                renderMenu();
+            } 
+        }
+        
+        function addMenuItem(cat, slideIndex) { 
+            if(!menuData || !menuData[cat] || !menuData[cat][slideIndex]) return;
+            if(menuData[cat][slideIndex].items.length>=10){alert('Maximum 10 items per slide');return;} 
+            menuData[cat][slideIndex].items.push({
+                name:'New Item',
+                desc:'Description',
+                price:'$0.00',
+                tag:'',
+                image:''
+            }); 
+            generateAdminForms(); 
+        }
+        
+        function deleteMenuItem(cat, slideIndex, itemIndex) { 
+            if(!menuData || !menuData[cat] || !menuData[cat][slideIndex]) return;
+            if(menuData[cat][slideIndex].items.length<=1){alert('At least one item required');return;} 
+            menuData[cat][slideIndex].items.splice(itemIndex, 1); 
+            generateAdminForms(); 
+        }
+        function saveAllChanges() {
+            console.log('Saving changes...');
+            if(!menuData) {
+                alert('No menu data to save');
+                return;
+            }
+            ['food','drink','promo'].forEach(cat => {
+                if(!menuData[cat]) return;
+                menuData[cat].forEach((slide,i) => {
+                    const img = document.getElementById(`${cat}_${i}_image`);
+                    if(img) slide.image = img.value;
+                    
+                    if(slide.items) {
+                        slide.items.forEach((item,j) => {
+                            ['name','desc','price','tag','image'].forEach(field => {
+                                const el = document.getElementById(`${cat}_${i}_item_${j}_${field}`);
+                                if(el) item[field] = el.value;
+                            });
+                        });
+                    }
+                });
+            });
+            console.log('Changes applied, saving to Firebase...');
+            saveMenuData();
+        }
         let touchX=0; document.querySelectorAll('.carousel').forEach(car => { car.addEventListener('touchstart',e=>touchX=e.changedTouches[0].screenX); car.addEventListener('touchend',e=>{ const c=car.id.replace('-carousel',''), d=e.changedTouches[0].screenX-touchX; if(Math.abs(d)>50) moveSlide(c,d<0?1:-1); }); });
         document.querySelectorAll('.category-btn').forEach(b=>{b.addEventListener('click',function(){document.querySelectorAll('.category-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.category-section').forEach(x=>x.classList.remove('active'));this.classList.add('active');document.getElementById(this.dataset.category).classList.add('active');});});
         window.addEventListener('online', () => { document.getElementById('offlineBadge').classList.remove('active'); });
