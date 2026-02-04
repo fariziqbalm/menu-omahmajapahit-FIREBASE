@@ -106,16 +106,16 @@
         <div class="admin-top-bar">
             <button class="admin-top-btn" onclick="showChangePassword()">Change Password</button>
         </div>
-        <nav class="admin-category-bar">
-            <button class="admin-category-btn active" data-category="food" onclick="switchAdminTab('food')">Food</button>
-            <button class="admin-category-btn" data-category="drink" onclick="switchAdminTab('drink')">Drink</button>
-            <button class="admin-category-btn" data-category="promo" onclick="switchAdminTab('promo')">Promo</button>
+        <nav class="admin-category-bar" id="adminCategoryBar">
+            <button class="admin-category-btn active" data-category="food">Food</button>
+            <button class="admin-category-btn" data-category="drink">Drink</button>
+            <button class="admin-category-btn" data-category="promo">Promo</button>
         </nav>
-        <div class="admin-content">
-            <div class="admin-category-content active" id="admin-food"></div>
-            <div class="admin-category-content" id="admin-drink"></div>
-            <div class="admin-category-content" id="admin-promo"></div>
-            <button class="btn-save" onclick="saveAllChanges()">Save All Changes</button>
+        <div class="admin-content" id="adminContent">
+            <!-- Content will be loaded here -->
+        </div>
+        <div style="padding: 15px;">
+            <button class="btn-save" style="width: 100%;" onclick="saveAllChanges()">Save All Changes</button>
         </div>
     </div>
     <div class="modal-overlay" id="passwordModal"><div class="modal"><h2>Change Password</h2><p class="error-msg" id="passwordError"></p><p class="success-msg" id="passwordSuccess"></p><input type="password" id="currentPassword" placeholder="Current Password"><input type="password" id="newPassword" placeholder="New Password"><button class="login-btn" onclick="changePassword()">Change Password</button><button class="cancel-btn" onclick="hideChangePassword()">Cancel</button></div></div>
@@ -245,11 +245,167 @@
         function goToSlide(c,i) { carouselState[c].current = i; updateCarousel(c); }
         function renderMenuItems(c) { const con = document.getElementById(`${c}-items`), s = menuData[c][carouselState[c].current]; con.innerHTML = s.items.map(i => `<div class="menu-item"><div class="item-image"><img src="${i.image||'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="#ddd" width="100" height="100"/><text fill="#999" x="50%" y="50%" text-anchor="middle">No Image</text></svg>')}"></div><div class="item-info"><div>${i.tag?`<span class="promo-tag">${i.tag}</span>`:''}<div class="item-name">${i.name}</div><div class="item-desc">${i.desc}</div></div><div class="item-bottom"><span class="item-price">${i.price}</span></div></div></div>`).join(''); }
         function showAdminPanel() { 
-            console.log('Opening admin panel, menuData:', menuData ? 'loaded' : 'null');
             if(!menuData) {
-                console.log('Waiting for menu data...');
+                setTimeout(showAdminPanel, 500);
                 return;
             }
+            document.getElementById('adminPanel').classList.add('active'); 
+            setupAdminCategoryBar();
+            renderAdminCategory('food');
+        }
+        
+        function setupAdminCategoryBar() {
+            const bar = document.getElementById('adminCategoryBar');
+            const buttons = bar.querySelectorAll('.admin-category-btn');
+            buttons.forEach(btn => {
+                btn.onclick = function() {
+                    buttons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    renderAdminCategory(this.dataset.category);
+                };
+            });
+        }
+        
+        function renderAdminCategory(category) {
+            const content = document.getElementById('adminContent');
+            const slides = menuData[category];
+            
+            let html = '<div style="margin-bottom: 15px;">';
+            html += '<button class="btn btn-add" onclick="addSlide(\'' + category + '\')">+ Add Slide</button>';
+            html += '<span style="margin-left: 10px; color: #666; font-size: 0.85rem;">Slides: ' + slides.length + '/10</span>';
+            html += '</div>';
+            
+            slides.forEach((slide, i) => {
+                html += '<div class="admin-section">';
+                html += '<h3>Slide ' + (i + 1);
+                if (slides.length > 1) {
+                    html += '<button class="btn btn-delete" onclick="deleteSlide(\'' + category + '\', ' + i + ')">Delete</button>';
+                }
+                html += '</h3>';
+                
+                html += '<div class="edit-item">';
+                html += '<label>Slide Image URL</label>';
+                html += '<input type="url" id="' + category + '_' + i + '_image" value="' + (slide.image || '') + '" placeholder="https://example.com/image.jpg">';
+                if (slide.image) {
+                    html += '<img src="' + slide.image + '" style="width: 100%; height: 80px; object-fit: contain; margin-top: 5px; border-radius: 8px;">';
+                }
+                html += '</div>';
+                
+                html += '<div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0;">';
+                html += '<strong>Items (' + slide.items.length + ')</strong>';
+                html += '<button class="btn btn-add" onclick="addMenuItem(\'' + category + '\', ' + i + ')">+ Add Item</button>';
+                html += '</div>';
+                
+                slide.items.forEach((item, j) => {
+                    html += '<div class="edit-item">';
+                    html += '<div style="display: flex; justify-content: space-between; margin-bottom: 10px;">';
+                    html += '<strong>Item ' + (j + 1) + '</strong>';
+                    if (slide.items.length > 1) {
+                        html += '<button class="btn btn-delete" onclick="deleteMenuItem(\'' + category + '\', ' + i + ', ' + j + ')">Remove</button>';
+                    }
+                    html += '</div>';
+                    
+                    html += '<label>Image URL</label>';
+                    html += '<input type="url" id="' + category + '_' + i + '_item_' + j + '_image" value="' + (item.image || '') + '" placeholder="https://example.com/image.jpg">';
+                    
+                    html += '<label style="margin-top: 10px;">Name</label>';
+                    html += '<input type="text" id="' + category + '_' + i + '_item_' + j + '_name" value="' + item.name + '">';
+                    
+                    html += '<label style="margin-top: 10px;">Description</label>';
+                    html += '<textarea id="' + category + '_' + i + '_item_' + j + '_desc">' + item.desc + '</textarea>';
+                    
+                    html += '<label style="margin-top: 10px;">Price</label>';
+                    html += '<input type="text" id="' + category + '_' + i + '_item_' + j + '_price" value="' + item.price + '">';
+                    
+                    html += '<label style="margin-top: 10px;">Tag (leave empty for no tag)</label>';
+                    html += '<input type="text" id="' + category + '_' + i + '_item_' + j + '_tag" value="' + (item.tag || '') + '">';
+                    
+                    html += '</div>';
+                });
+                
+                html += '</div>';
+            });
+            
+            content.innerHTML = html;
+        }
+        
+        function addSlide(category) {
+            if (!menuData[category] || menuData[category].length >= 10) {
+                alert('Maximum 10 slides allowed');
+                return;
+            }
+            menuData[category].push({
+                image: '',
+                items: [{name: 'New Item', desc: 'Description', price: '$0.00', tag: '', image: ''}]
+            });
+            renderAdminCategory(category);
+        }
+        
+        function deleteSlide(category, index) {
+            if (menuData[category].length <= 1) {
+                alert('At least one slide is required');
+                return;
+            }
+            if (confirm('Delete slide ' + (index + 1) + '?')) {
+                menuData[category].splice(index, 1);
+                renderAdminCategory(category);
+                renderMenu();
+            }
+        }
+        
+        function addMenuItem(category, slideIndex) {
+            const slide = menuData[category][slideIndex];
+            if (slide.items.length >= 10) {
+                alert('Maximum 10 items per slide');
+                return;
+            }
+            slide.items.push({
+                name: 'New Item',
+                desc: 'Description',
+                price: '$0.00',
+                tag: '',
+                image: ''
+            });
+            renderAdminCategory(category);
+        }
+        
+        function deleteMenuItem(category, slideIndex, itemIndex) {
+            const slide = menuData[category][slideIndex];
+            if (slide.items.length <= 1) {
+                alert('At least one item is required');
+                return;
+            }
+            slide.items.splice(itemIndex, 1);
+            renderAdminCategory(category);
+        }
+        
+        function saveAllChanges() {
+            if (!menuData) {
+                alert('No menu data to save');
+                return;
+            }
+            
+            ['food', 'drink', 'promo'].forEach(category => {
+                if (!menuData[category]) return;
+                
+                menuData[category].forEach((slide, i) => {
+                    const imageEl = document.getElementById(category + '_' + i + '_image');
+                    if (imageEl) slide.image = imageEl.value;
+                    
+                    if (slide.items) {
+                        slide.items.forEach((item, j) => {
+                            const fields = ['name', 'desc', 'price', 'tag', 'image'];
+                            fields.forEach(field => {
+                                const el = document.getElementById(category + '_' + i + '_item_' + j + '_' + field);
+                                if (el) item[field] = el.value;
+                            });
+                        });
+                    }
+                });
+            });
+            
+            saveMenuData();
+        }
             document.getElementById('adminPanel').classList.add('active'); 
             generateAdminForms();
             setupAdminTabs();
