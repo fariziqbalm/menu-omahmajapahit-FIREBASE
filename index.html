@@ -324,6 +324,7 @@
                 items: [{name: 'New Item', desc: 'Description', price: '$0.00', tag: '', image: ''}]
             });
             renderAdminCategory(category);
+            renderMenu();
         }
         
         function deleteSlide(category, index) {
@@ -332,6 +333,10 @@
                 return;
             }
             if (confirm('Delete slide ' + (index + 1) + '?')) {
+                // Adjust carousel state if needed
+                if (carouselState[category].current >= menuData[category].length - 1) {
+                    carouselState[category].current = Math.max(0, menuData[category].length - 2);
+                }
                 menuData[category].splice(index, 1);
                 renderAdminCategory(category);
                 renderMenu();
@@ -352,6 +357,7 @@
                 image: ''
             });
             renderAdminCategory(category);
+            renderMenu();
         }
         
         function deleteMenuItem(category, slideIndex, itemIndex) {
@@ -362,6 +368,7 @@
             }
             slide.items.splice(itemIndex, 1);
             renderAdminCategory(category);
+            renderMenu();
         }
         
         function saveAllChanges() {
