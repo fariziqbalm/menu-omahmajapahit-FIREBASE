@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Digital Menu - Browse our delicious offerings">
+    <title>Digital Menu</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; color: #333; padding-bottom: 80px; }
+        .header { position: fixed; top: 0; left: 0; right: 0; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 100; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; padding: 3px 15px; background: #e74c3c; }
+        .logo { color: white; font-size: 1.2rem; font-weight: bold; }
+        .admin-dots { display: flex; flex-direction: column; gap: 3px; cursor: pointer; padding: 5px; }
+        .admin-dots span { width: 5px; height: 5px; border-radius: 50%; background: white; }
+        .category-bar { display: flex; justify-content: space-around; background: #fff; border-bottom: 1px solid #eee; }
+        .category-btn { flex: 1; padding: 4px 10px; background: none; border: none; font-size: 0.95rem; font-weight: 600; color: #666; cursor: pointer; border-bottom: 2px solid transparent; }
+        .category-btn.active { color: #e74c3c; border-bottom-color: #e74c3c; }
+        .main-content { margin-top: 45px; padding: 15px; }
+        .category-section { display: none; animation: fadeIn 0.3s ease; }
+        .category-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .carousel { position: relative; width: 100%; height: 500px; border-radius: 15px; overflow: hidden; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .carousel-track { display: flex; height: 100%; width: 100%; transition: transform 0.4s ease; }
+        .carousel-slide { min-width: 100%; height: 100%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #f0f0f0; }
+        .carousel-slide img { width: 100%; height: 100%; object-fit: contain; background: #f0f0f0; }
+        .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.9); border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; z-index: 10; }
+        .carousel-btn.prev { left: 10px; } .carousel-btn.next { right: 10px; }
+        .carousel-dots { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.5); cursor: pointer; }
+        .dot.active { background: white; transform: scale(1.3); }
+        .section-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 15px; color: #333; }
+        .menu-grid { display: flex; flex-direction: column; gap: 15px; }
+        .menu-item { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08); display: flex; }
+        .item-image { width: 100px; height: 100px; flex-shrink: 0; }
+        .item-image img { width: 100%; height: 100%; object-fit: cover; }
+        .item-info { padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .item-name { font-weight: 600; font-size: 1rem; margin-bottom: 5px; }
+        .item-desc { font-size: 0.8rem; color: #888; line-height: 1.4; }
+        .item-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+        .item-price { font-weight: bold; color: #e74c3c; font-size: 1.1rem; }
+        .promo-tag { background: #27ae60; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
+        @media (min-width: 480px) { .menu-grid { flex-direction: row; flex-wrap: wrap; } .menu-item { width: calc(50% - 8px); } }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 350px; }
+        .modal h2 { text-align: center; margin-bottom: 20px; }
+        .modal input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        .modal button { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-bottom: 10px; }
+        .modal .login-btn { background: #e74c3c; color: white; }
+        .modal .cancel-btn { background: #ddd; }
+        .error-msg { color: red; font-size: 0.85rem; text-align: center; margin-bottom: 10px; display: none; }
+        .success-msg { color: #27ae60; font-size: 0.85rem; text-align: center; margin-bottom: 10px; display: none; }
+        .admin-panel { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #f5f5f5; z-index: 150; overflow-y: auto; }
+        .admin-panel.active { display: block; }
+        .admin-header { background: #e74c3c; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; }
+        .admin-header h2 { font-size: 1.2rem; }
+        .admin-top-bar { background: #c0392b; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; }
+        .admin-top-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 8px; }
+        .close-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+        .admin-category-bar { display: flex; justify-content: space-around; background: #fff; border-bottom: 1px solid #eee; }
+        .admin-category-btn { flex: 1; padding: 8px 10px; background: none; border: none; font-size: 0.9rem; font-weight: 600; color: #666; cursor: pointer; border-bottom: 2px solid transparent; }
+        .admin-category-btn.active { color: #e74c3c; border-bottom-color: #e74c3c; }
+        .admin-category-content { display: none; }
+        .admin-category-content.active { display: block; }
+        .admin-content { padding: 15px; }
+        .admin-section { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .edit-item { border-bottom: 1px solid #eee; padding: 15px 0; }
+        .edit-item:last-child { border-bottom: none; }
+        .edit-item label { display: block; font-size: 0.85rem; color: #666; margin-bottom: 5px; }
+        .edit-item input, .edit-item textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; }
+        .edit-item textarea { resize: vertical; min-height: 60px; }
+        .btn { padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin-right: 5px; }
+        .btn-delete { background: #e74c3c; color: white; }
+        .btn-add { background: #27ae60; color: white; padding: 10px 20px; }
+        .btn-save { background: #27ae60; color: white; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 1rem; margin-top: 15px; }
+        .loading-spinner { display: none; text-align: center; padding: 50px; }
+        .loading-spinner.active { display: block; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #e74c3c; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .offline-badge { display: none; position: fixed; bottom: 10px; left: 10px; background: #f39c12; color: white; padding: 10px 20px; border-radius: 8px; font-size: 0.85rem; z-index: 999; }
+        .offline-badge.active { display: block; }
+        .user-info { color: white; margin-right: 10px; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div id="loadingSpinner" class="loading-spinner active"><div class="spinner"></div><p>Loading menu...</p></div>
+    <div id="mainContent" style="display: none;">
+        <header class="header"><div class="header-top"><div class="logo">Digital Menu</div><div class="admin-dots" onclick="showLogin()"><span></span><span></span><span></span></div></div>
+        <nav class="category-bar"><button class="category-btn active" data-category="food">Food</button><button class="category-btn" data-category="drink">Drink</button><button class="category-btn" data-category="promo">Promo</button></nav></header>
+        <main class="main-content">
+            <section class="category-section active" id="food"><div class="carousel" id="food-carousel"><div class="carousel-track"></div><button class="carousel-btn prev" onclick="moveSlide('food', -1)">&#8249;</button><button class="carousel-btn next" onclick="moveSlide('food', 1)">&#8250;</button><div class="carousel-dots"></div></div><h2 class="section-title">Food Menu</h2><div class="menu-grid" id="food-items"></div></section>
+            <section class="category-section" id="drink"><div class="carousel" id="drink-carousel"><div class="carousel-track"></div><button class="carousel-btn prev" onclick="moveSlide('drink', -1)">&#8249;</button><button class="carousel-btn next" onclick="moveSlide('drink', 1)">&#8250;</button><div class="carousel-dots"></div></div><h2 class="section-title">Drink Menu</h2><div class="menu-grid" id="drink-items"></div></section>
+            <section class="category-section" id="promo"><div class="carousel" id="promo-carousel"><div class="carousel-track"></div><button class="carousel-btn prev" onclick="moveSlide('promo', -1)">&#8249;</button><button class="carousel-btn next" onclick="moveSlide('promo', 1)">&#8250;</button><div class="carousel-dots"></div></div><h2 class="section-title">Special Promos</h2><div class="menu-grid" id="promo-items"></div></section>
+        </main>
+    </div>
+    <div class="modal-overlay" id="loginModal"><div class="modal"><h2>Admin Login</h2><p class="error-msg" id="loginError"></p><input type="email" id="email" placeholder="Email"><input type="password" id="password" placeholder="Password"><button class="login-btn" onclick="login()">Login</button><button class="cancel-btn" onclick="hideLogin()">Cancel</button></div></div>
+    <div class="admin-panel" id="adminPanel"><div class="admin-header"><h2>Admin Panel</h2><div style="display: flex; align-items: center;"><span id="userInfo" class="user-info"></span><button class="close-btn" onclick="logout()">&times;</button></div></div><div class="admin-top-bar"><button class="admin-top-btn" onclick="showChangePassword()">Change Password</button></div><nav class="admin-category-bar"><button class="admin-category-btn active" data-category="food">Food</button><button class="admin-category-btn" data-category="drink">Drink</button><button class="admin-category-btn" data-category="promo">Promo</button></nav><div class="admin-content"><div class="admin-category-content active" id="admin-food"></div><div class="admin-category-content" id="admin-drink"></div><div class="admin-category-content" id="admin-promo"></div><button class="btn-save" onclick="saveAllChanges()">Save All Changes</button></div></div>
+    <div class="modal-overlay" id="passwordModal"><div class="modal"><h2>Change Password</h2><p class="error-msg" id="passwordError"></p><p class="success-msg" id="passwordSuccess"></p><input type="password" id="currentPassword" placeholder="Current Password"><input type="password" id="newPassword" placeholder="New Password"><button class="login-btn" onclick="changePassword()">Change Password</button><button class="cancel-btn" onclick="hideChangePassword()">Cancel</button></div></div>
+    <div class="offline-badge" id="offlineBadge">You are offline - Changes will sync when online</div>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = { apiKey: "YOUR_API_KEY", authDomain: "YOUR_PROJECT.firebaseapp.com", projectId: "YOUR_PROJECT_ID", storageBucket: "YOUR_PROJECT.appspot.com", messagingSenderId: "YOUR_SENDER_ID", appId: "YOUR_APP_ID" };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth(), db = firebase.firestore();
+        const defaultData = { food: [{ image: 'https://picsum.photos/800/1200?random=1', items: [{ name: 'Classic Burger', desc: 'Juicy beef patty with lettuce, tomato, and cheese', price: '$8.99', tag: '', image: 'https://picsum.photos/200/200?random=11' }] }], drink: [{ image: 'https://picsum.photos/800/1200?random=2', items: [{ name: 'Iced Coffee', desc: 'Cold brew with ice and milk', price: '$3.99', tag: '', image: 'https://picsum.photos/200/200?random=12' }] }], promo: [{ image: 'https://picsum.photos/800/1200?random=3', items: [{ name: 'Burger Combo', desc: 'Burger + Fries + Drink', price: '$12.99', tag: 'BEST SELLER', image: 'https://picsum.photos/200/200?random=13' }] }] };
+        let menuData = null, currentUser = null, localData = null;
+        const carouselState = { food: { current: 0 }, drink: { current: 0 }, promo: { current: 0 } };
+        function showLogin() { document.getElementById('loginModal').classList.add('active'); document.getElementById('loginError').style.display = 'none'; }
+        function hideLogin() { document.getElementById('loginModal').classList.remove('active'); }
+        function showChangePassword() { document.getElementById('passwordModal').classList.add('active'); document.getElementById('passwordError').style.display = 'none'; document.getElementById('passwordSuccess').style.display = 'none'; }
+        function hideChangePassword() { document.getElementById('passwordModal').classList.remove('active'); }
+        async function login() { const e = document.getElementById('email').value, p = document.getElementById('password').value; try { await auth.signInWithEmailAndPassword(e, p); hideLogin(); } catch(err) { document.getElementById('loginError').textContent = err.message; document.getElementById('loginError').style.display = 'block'; } }
+        async function logout() { await auth.signOut(); document.getElementById('adminPanel').classList.remove('active'); }
+        async function changePassword() { const cp = document.getElementById('currentPassword').value, np = document.getElementById('newPassword').value; try { await auth.signInWithEmailAndPassword(currentUser.email, cp); await currentUser.updatePassword(np); document.getElementById('passwordSuccess').textContent = 'Password changed!'; document.getElementById('passwordSuccess').style.display = 'block'; setTimeout(hideChangePassword, 2000); } catch(err) { document.getElementById('passwordError').textContent = err.message; document.getElementById('passwordError').style.display = 'block'; } }
+        function loadLocal() { try { localData = JSON.parse(localStorage.getItem('menuData')); } catch(e) {} }
+        function saveLocal() { if(menuData) localStorage.setItem('menuData', JSON.stringify(menuData)); }
+        auth.onAuthStateChanged(async u => { currentUser = u; loadLocal(); if(u){ document.getElementById('userInfo').textContent = u.email; showAdminPanel(); } await loadMenuData(); });
+        async function loadMenuData() { try { const d = await db.collection('settings').doc('menuData').get(); if(d.exists){ menuData = d.data(); saveLocal(); } else if(localData){ menuData = localData; await db.collection('settings').doc('menuData').set(menuData); } else { menuData = JSON.parse(JSON.stringify(defaultData)); await db.collection('settings').doc('menuData').set(menuData); saveLocal(); } } catch(e) { menuData = localData || JSON.parse(JSON.stringify(defaultData)); } renderMenu(); document.getElementById('loadingSpinner').classList.remove('active'); document.getElementById('mainContent').style.display = 'block'; }
+        async function saveMenuData() { try { await db.collection('settings').doc('menuData').set(menuData); saveLocal(); alert('Saved!'); renderMenu(); } catch(e) { saveLocal(); alert('Saved locally - will sync when online'); } }
+        function renderMenu() { ['food','drink','promo'].forEach(c => { const t = document.querySelector(`#${c}-carousel .carousel-track`); t.innerHTML = menuData[c].map(s => `<div class="carousel-slide"><img src="${s.image||'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200"><rect fill="#ddd" width="800" height="1200"/><text fill="#999" x="50%" y="50%" text-anchor="middle">No Image</text></svg>')}"></div>`).join(''); updateCarousel(c); }); }
+        function updateCarousel(c) { const d = document.querySelector(`#${c}-carousel .carousel-dots`), i = carouselState[c].current, s = menuData[c]; document.querySelector(`#${c}-carousel .carousel-track`).style.transform = `translateX(${-i*100}%)`; if(d && s.length>1){ d.innerHTML = s.map((_,j) => `<span class="dot ${j===i?'active':''}" onclick="goToSlide('${c}',${j})"></span>`).join(''); d.style.display='flex'; } else if(d){ d.style.display='none'; } renderMenuItems(c); }
+        function moveSlide(c,d) { carouselState[c].current = (carouselState[c].current + d + menuData[c].length) % menuData[c].length; updateCarousel(c); }
+        function goToSlide(c,i) { carouselState[c].current = i; updateCarousel(c); }
+        function renderMenuItems(c) { const con = document.getElementById(`${c}-items`), s = menuData[c][carouselState[c].current]; con.innerHTML = s.items.map(i => `<div class="menu-item"><div class="item-image"><img src="${i.image||'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="#ddd" width="100" height="100"/><text fill="#999" x="50%" y="50%" text-anchor="middle">No Image</text></svg>')}"></div><div class="item-info"><div>${i.tag?`<span class="promo-tag">${i.tag}</span>`:''}<div class="item-name">${i.name}</div><div class="item-desc">${i.desc}</div></div><div class="item-bottom"><span class="item-price">${i.price}</span></div></div></div>`).join(''); }
+        function showAdminPanel() { document.getElementById('adminPanel').classList.add('active'); generateAdminForms(); document.querySelectorAll('.admin-category-btn').forEach(b => b.onclick = function() { document.querySelectorAll('.admin-category-btn').forEach(x => x.classList.remove('active')); document.querySelectorAll('.admin-category-content').forEach(x => x.classList.remove('active')); this.classList.add('active'); document.getElementById('admin-' + this.dataset.category).classList.add('active'); }); }
+        function generateAdminForms() { ['food','drink','promo'].forEach(cat => { const slides = menuData[cat]; let html = `<button class="btn btn-add" onclick="addSlide('${cat}')">+ Add Slide</button><p style="font-size:0.85rem;color:#666;margin:10px 0;">Slides: ${slides.length}/10</p>`; slides.forEach((slide,i) => { html += `<div class="admin-section"><h3>Slide ${i+1}<div>${slides.length>1?`<button class="btn btn-delete" onclick="deleteSlide('${cat}',${i})">Delete</button>`:''}</div></h3><div class="edit-item"><label>Image URL</label><input type="url" id="${cat}_${i}_image" value="${slide.image}" placeholder="https://..."></div><div style="display:flex;justify-content:space-between;align-items:center;margin:15px 0;"><strong>Items (${slide.items.length})</strong><button class="btn btn-add" onclick="addMenuItem('${cat}',${i})">+ Add Item</button></div>`; slide.items.forEach((item,j) => { html += `<div class="edit-item"><div style="display:flex;justify-content:space-between;margin-bottom:10px;"><strong>Item ${j+1}</strong><div>${slide.items.length>1?`<button class="btn btn-delete" onclick="deleteMenuItem('${cat}',${i},${j})">Remove</button>`:''}</div></div><label>Image URL</label><input type="url" id="${cat}_${i}_item_${j}_image" value="${item.image}" placeholder="https://..."><label>Name</label><input type="text" id="${cat}_${i}_item_${j}_name" value="${item.name}"><label>Description</label><textarea id="${cat}_${i}_item_${j}_desc">${item.desc}</textarea><label>Price</label><input type="text" id="${cat}_${i}_item_${j}_price" value="${item.price}"><label>Tag</label><input type="text" id="${cat}_${i}_item_${j}_tag" value="${item.tag}"></div>`; }); html += '</div>'; }); document.getElementById(`${cat}-admin-content`).innerHTML = html; }); }
+        function addSlide(c) { if(menuData[c].length>=10){alert('Max 10');return;} menuData[c].push({image:'',items:[{name:'New Item',desc:'Description',price:'$0.00',tag:'',image:''}]}); generateAdminForms(); }
+        function deleteSlide(c,i) { if(menuData[c].length<=1){alert('Min 1');return;} if(confirm('Delete?')){menuData[c].splice(i,1);generateAdminForms();renderMenu();} }
+        function addMenuItem(c,s) { if(menuData[c][s].items.length>=10){alert('Max 10');return;} menuData[c][s].items.push({name:'New Item',desc:'Description',price:'$0.00',tag:'',image:''}); generateAdminForms(); }
+        function deleteMenuItem(c,s,i) { if(menuData[c][s].items.length<=1){alert('Min 1');return;} menuData[c][s].items.splice(i,1); generateAdminForms(); }
+        function saveAllChanges() { ['food','drink','promo'].forEach(cat => { menuData[cat].forEach((slide,i) => { const img = document.getElementById(`${cat}_${i}_image`); if(img) slide.image = img.value; slide.items.forEach((item,j) => { ['name','desc','price','tag','image'].forEach(f => { const el = document.getElementById(`${cat}_${i}_item_${j}_${f}`); if(el) item[f] = el.value; }); }); }); }); saveMenuData(); }
+        let touchX=0; document.querySelectorAll('.carousel').forEach(car => { car.addEventListener('touchstart',e=>touchX=e.changedTouches[0].screenX); car.addEventListener('touchend',e=>{ const c=car.id.replace('-carousel',''), d=e.changedTouches[0].screenX-touchX; if(Math.abs(d)>50) moveSlide(c,d<0?1:-1); }); });
+        document.querySelectorAll('.category-btn').forEach(b=>{b.addEventListener('click',function(){document.querySelectorAll('.category-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.category-section').forEach(x=>x.classList.remove('active'));this.classList.add('active');document.getElementById(this.dataset.category).classList.add('active');});});
+        window.addEventListener('online', () => { document.getElementById('offlineBadge').classList.remove('active'); });
+        window.addEventListener('offline', () => { document.getElementById('offlineBadge').classList.add('active'); });
+        if(!navigator.onLine) document.getElementById('offlineBadge').classList.add('active');
+    </script>
+</body>
+</html>
