@@ -156,23 +156,7 @@
             closeAdminPanel(); 
         }
         
-        function showChangePassword() { document.getElementById('passwordModal').classList.add('active'); document.getElementById('passwordError').style.display = 'none'; document.getElementById('passwordSuccess').style.display = 'none'; }
-        function hideChangePassword() { document.getElementById('passwordModal').classList.remove('active'); }
-        async function login() { 
-            const e = document.getElementById('email').value, p = document.getElementById('password').value; 
-            try { 
-                console.log('Attempting login...');
-                await auth.signInWithEmailAndPassword(e, p); 
-                console.log('Login successful');
-                hideLogin(); 
-            } catch(err) { 
-                console.error('Login failed:', err);
-                document.getElementById('loginError').textContent = err.message; 
-                document.getElementById('loginError').style.display = 'block'; 
-            } 
-        }
-        async function logout() { await auth.signOut(); document.getElementById('adminPanel').classList.remove('active'); }
-        async function changePassword() { 
+        async function changePassword() {
             const cp = document.getElementById('currentPassword').value, np = document.getElementById('newPassword').value; 
             if(!cp || !np) {
                 document.getElementById('passwordError').textContent = 'Please fill in all fields';
