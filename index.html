@@ -102,7 +102,15 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script>
-        const firebaseConfig = { apiKey: "YOUR_API_KEY", authDomain: "YOUR_PROJECT.firebaseapp.com", projectId: "YOUR_PROJECT_ID", storageBucket: "YOUR_PROJECT.appspot.com", messagingSenderId: "YOUR_SENDER_ID", appId: "YOUR_APP_ID" };
+        const firebaseConfig = {
+            apiKey: "AIzaSyD9sVIShHVV4DKuZmf7QSVdEnG3u18kmdQ",
+            authDomain: "menuomahmajapahit.firebaseapp.com",
+            projectId: "menuomahmajapahit",
+            storageBucket: "menuomahmajapahit.firebasestorage.app",
+            messagingSenderId: "1086939835054",
+            appId: "1:1086939835054:web:98677067b56d296de7db3f",
+            measurementId: "G-C7M8WE2L0C"
+        };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.firestore();
         const defaultData = { food: [{ image: 'https://picsum.photos/800/1200?random=1', items: [{ name: 'Classic Burger', desc: 'Juicy beef patty with lettuce, tomato, and cheese', price: '$8.99', tag: '', image: 'https://picsum.photos/200/200?random=11' }] }], drink: [{ image: 'https://picsum.photos/800/1200?random=2', items: [{ name: 'Iced Coffee', desc: 'Cold brew with ice and milk', price: '$3.99', tag: '', image: 'https://picsum.photos/200/200?random=12' }] }], promo: [{ image: 'https://picsum.photos/800/1200?random=3', items: [{ name: 'Burger Combo', desc: 'Burger + Fries + Drink', price: '$12.99', tag: 'BEST SELLER', image: 'https://picsum.photos/200/200?random=13' }] }] };
