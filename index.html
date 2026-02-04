@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Digital Menu - Browse our delicious offerings">
+    <meta name="description" content="Digital Menu Omah Majapahit Blora - Browse our delicious offerings">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>">
     <title>Omah Majapahit</title>
     <style>
@@ -89,7 +89,7 @@
 <body>
     <div id="loadingSpinner" class="loading-spinner active"><div class="spinner"></div><p>Loading menu...</p></div>
     <div id="mainContent" style="display: none;">
-        <header class="header">        <div class="header-top"><div class="logo">Digital Menu</div><div class="admin-dots" onclick="showLogin()"><span></span><span></span><span></span></div><button class="admin-btn" id="adminBtn" onclick="if(currentUser) showAdminPanel(); else showLogin();" style="display: none;">Admin</button></div>
+        <header class="header">        <div class="header-top"><div class="logo">Omah Majapahit</div><div class="admin-dots" onclick="showLogin()"><span></span><span></span><span></span></div><button class="admin-btn" id="adminBtn" onclick="if(currentUser) showAdminPanel(); else showLogin();" style="display: none;">Admin</button></div>
         <nav class="category-bar"><button class="category-btn active" data-category="food">Food</button><button class="category-btn" data-category="drink">Drink</button><button class="category-btn" data-category="promo">Promo</button></nav></header>
         <main class="main-content">
             <section class="category-section active" id="food"><div class="carousel" id="food-carousel"><div class="carousel-track"></div><button class="carousel-btn prev" onclick="moveSlide('food', -1)">&#8249;</button><button class="carousel-btn next" onclick="moveSlide('food', 1)">&#8250;</button><div class="carousel-dots"></div></div><h2 class="section-title">Food Menu</h2><div class="menu-grid" id="food-items"></div></section>
