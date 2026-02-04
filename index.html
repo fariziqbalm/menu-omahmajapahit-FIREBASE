@@ -139,7 +139,7 @@
         };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.firestore();
-        const defaultData = { food: [{ image: 'https://picsum.photos/800/1200?random=1', items: [{ name: 'Classic Burger', desc: 'Juicy beef patty with lettuce, tomato, and cheese', price: '$8.99', tag: '', image: 'https://picsum.photos/200/200?random=11' }] }], drink: [{ image: 'https://picsum.photos/800/1200?random=2', items: [{ name: 'Iced Coffee', desc: 'Cold brew with ice and milk', price: '$3.99', tag: '', image: 'https://picsum.photos/200/200?random=12' }] }], promo: [{ image: 'https://picsum.photos/800/1200?random=3', items: [{ name: 'Burger Combo', desc: 'Burger + Fries + Drink', price: '$12.99', tag: 'BEST SELLER', image: 'https://picsum.photos/200/200?random=13' }] }] };
+        const defaultData = { food: [{ image: 'https://picsum.photos/800/1200?random=1', items: [{ name: 'Classic Burger', desc: 'Juicy beef patty with lettuce, tomato, and cheese', price: '8.99', tag: '', image: 'https://picsum.photos/200/200?random=11' }] }], drink: [{ image: 'https://picsum.photos/800/1200?random=2', items: [{ name: 'Iced Coffee', desc: 'Cold brew with ice and milk', price: '3.99', tag: '', image: 'https://picsum.photos/200/200?random=12' }] }], promo: [{ image: 'https://picsum.photos/800/1200?random=3', items: [{ name: 'Burger Combo', desc: 'Burger + Fries + Drink', price: '12.99', tag: 'BEST SELLER', image: 'https://picsum.photos/200/200?random=13' }] }] };
         let menuData = null, currentUser = null, localData = null;
         const carouselState = { food: { current: 0 }, drink: { current: 0 }, promo: { current: 0 } };
         function showLogin() { document.getElementById('loginModal').classList.add('active'); document.getElementById('loginError').style.display = 'none'; }
@@ -373,7 +373,7 @@
             }
             menuData[category].push({
                 image: '',
-                items: [{name: 'New Item', desc: 'Description', price: '$0.00', tag: '', image: ''}]
+                items: [{name: 'New Item', desc: 'Description', price: '0K', tag: '', image: ''}]
             });
             console.log('New slide added, refreshing...');
             renderMenu();
@@ -408,7 +408,7 @@
             slide.items.push({
                 name: 'New Item',
                 desc: 'Description',
-                price: '$0.00',
+                price: '0K',
                 tag: '',
                 image: ''
             });
