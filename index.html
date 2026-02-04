@@ -270,7 +270,9 @@
             document.getElementById('adminPanel').classList.add('active'); 
             setupAdminCategoryBar();
             renderAdminCategory('food');
-        async function login() { 
+        }
+        
+        async function login() {
             const e = document.getElementById('email').value, p = document.getElementById('password').value; 
             try { 
                 console.log('Attempting login...');
