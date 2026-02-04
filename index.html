@@ -106,6 +106,7 @@
         </div>
         <div class="admin-top-bar">
             <button class="admin-top-btn" onclick="showChangePassword()">Change Password</button>
+            <button class="admin-top-btn" onclick="logout()" style="margin-left: 10px;">Logout</button>
         </div>
         <nav class="admin-category-bar" id="adminCategoryBar">
             <button class="admin-category-btn active" data-category="food">Food</button>
@@ -224,9 +225,41 @@
             }
         }
         async function saveMenuData() { try { await db.collection('settings').doc('menuData').set(menuData); saveLocal(); alert('Saved!'); renderMenu(); } catch(e) { saveLocal(); alert('Saved locally - will sync when online'); } }
-        function renderMenu() { ['food','drink','promo'].forEach(c => { const t = document.querySelector(`#${c}-carousel .carousel-track`); t.innerHTML = menuData[c].map(s => `<div class="carousel-slide"><img src="${s.image||'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200"><rect fill="#ddd" width="800" height="1200"/><text fill="#999" x="50%" y="50%" text-anchor="middle">No Image</text></svg>')}"></div>`).join(''); updateCarousel(c); }); }
-        function updateCarousel(c) { const d = document.querySelector(`#${c}-carousel .carousel-dots`), i = carouselState[c].current, s = menuData[c]; document.querySelector(`#${c}-carousel .carousel-track`).style.transform = `translateX(${-i*100}%)`; if(d && s.length>1){ d.innerHTML = s.map((_,j) => `<span class="dot ${j===i?'active':''}" onclick="goToSlide('${c}',${j})"></span>`).join(''); d.style.display='flex'; } else if(d){ d.style.display='none'; } renderMenuItems(c); }
-        function moveSlide(c,d) { carouselState[c].current = (carouselState[c].current + d + menuData[c].length) % menuData[c].length; updateCarousel(c); }
+        function renderMenu() { 
+            ['food','drink','promo'].forEach(c => { 
+                const t = document.querySelector(`#${c}-carousel .carousel-track`); 
+                t.innerHTML = menuData[c].map(s => `<div class="carousel-slide"><img src="${s.image||'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200"><rect fill="#ddd" width="800" height="1200"/><text fill="#999" x="50%" y="50%" text-anchor="middle">No Image</text></svg>')}"></div>`).join(''); 
+                updateCarousel(c); 
+            }); 
+        }
+        
+        function updateCarousel(c) { 
+            const d = document.querySelector(`#${c}-carousel .carousel-dots`);
+            const state = carouselState[c];
+            const s = menuData[c];
+            document.querySelector(`#${c}-carousel .carousel-track`).style.transform = `translateX(${-state.current * 100}%)`;
+            
+            // Show dots
+            if (d && s.length > 1) {
+                d.innerHTML = s.map((_, j) => `<span class="dot ${j === state.current ? 'active' : ''}" onclick="goToSlide('${c}', ${j})"></span>`).join('');
+                d.style.display = 'flex';
+            } else if (d) {
+                d.style.display = 'none';
+            }
+            
+            renderMenuItems(c);
+        }
+        function moveSlide(category, direction) {
+            const totalSlides = menuData[category].length;
+            const currentIndex = carouselState[category].current;
+            const newIndex = currentIndex + direction;
+            
+            // No looping - stop at boundaries
+            if (newIndex >= 0 && newIndex < totalSlides) {
+                carouselState[category].current = newIndex;
+            }
+            updateCarousel(category);
+        }
         function goToSlide(c,i) { carouselState[c].current = i; updateCarousel(c); }
         function renderMenuItems(c) { const con = document.getElementById(`${c}-items`), s = menuData[c][carouselState[c].current]; con.innerHTML = s.items.map(i => `<div class="menu-item"><div class="item-image"><img src="${i.image||'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="#ddd" width="100" height="100"/><text fill="#999" x="50%" y="50%" text-anchor="middle">No Image</text></svg>')}"></div><div class="item-info"><div>${i.tag?`<span class="promo-tag">${i.tag}</span>`:''}<div class="item-name">${i.name}</div><div class="item-desc">${i.desc}</div></div><div class="item-bottom"><span class="item-price">${i.price}</span></div></div></div>`).join(''); }
         function showAdminPanel() { 
@@ -315,6 +348,7 @@
         }
         
         function addSlide(category) {
+            console.log('Adding slide to:', category);
             if (!menuData[category] || menuData[category].length >= 10) {
                 alert('Maximum 10 slides allowed');
                 return;
@@ -323,11 +357,13 @@
                 image: '',
                 items: [{name: 'New Item', desc: 'Description', price: '$0.00', tag: '', image: ''}]
             });
-            renderAdminCategory(category);
+            console.log('New slide added, refreshing...');
             renderMenu();
+            renderAdminCategory(category);
         }
         
         function deleteSlide(category, index) {
+            console.log('Deleting slide:', category, index);
             if (menuData[category].length <= 1) {
                 alert('At least one slide is required');
                 return;
@@ -338,12 +374,14 @@
                     carouselState[category].current = Math.max(0, menuData[category].length - 2);
                 }
                 menuData[category].splice(index, 1);
-                renderAdminCategory(category);
+                console.log('Slide deleted, refreshing...');
                 renderMenu();
+                renderAdminCategory(category);
             }
         }
         
         function addMenuItem(category, slideIndex) {
+            console.log('Adding item to:', category, slideIndex);
             const slide = menuData[category][slideIndex];
             if (slide.items.length >= 10) {
                 alert('Maximum 10 items per slide');
@@ -356,19 +394,22 @@
                 tag: '',
                 image: ''
             });
-            renderAdminCategory(category);
+            console.log('Item added, refreshing...');
             renderMenu();
+            renderAdminCategory(category);
         }
         
         function deleteMenuItem(category, slideIndex, itemIndex) {
+            console.log('Deleting item:', category, slideIndex, itemIndex);
             const slide = menuData[category][slideIndex];
             if (slide.items.length <= 1) {
                 alert('At least one item is required');
                 return;
             }
             slide.items.splice(itemIndex, 1);
-            renderAdminCategory(category);
+            console.log('Item deleted, refreshing...');
             renderMenu();
+            renderAdminCategory(category);
         }
         
         function saveAllChanges() {
@@ -548,8 +589,6 @@
             console.log('Changes applied, saving to Firebase...');
             saveMenuData();
         }
-        let touchX=0; document.querySelectorAll('.carousel').forEach(car => { car.addEventListener('touchstart',e=>touchX=e.changedTouches[0].screenX); car.addEventListener('touchend',e=>{ const c=car.id.replace('-carousel',''), d=e.changedTouches[0].screenX-touchX; if(Math.abs(d)>50) moveSlide(c,d<0?1:-1); }); });
-        document.querySelectorAll('.category-btn').forEach(b=>{b.addEventListener('click',function(){document.querySelectorAll('.category-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.category-section').forEach(x=>x.classList.remove('active'));this.classList.add('active');document.getElementById(this.dataset.category).classList.add('active');});});
         window.addEventListener('online', () => { document.getElementById('offlineBadge').classList.remove('active'); });
         window.addEventListener('offline', () => { document.getElementById('offlineBadge').classList.add('active'); });
         if(!navigator.onLine) document.getElementById('offlineBadge').classList.add('active');
